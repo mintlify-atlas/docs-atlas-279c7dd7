@@ -1,97 +1,103 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "2048 - The Game"
+description: "A Python implementation of the classic 2048 tile-merging puzzle game, available as a desktop Tkinter app and a Flask-powered web application."
 ---
 
-## Setting up
+<div style={{ backgroundColor: "#2a4d73", borderRadius: "8px", padding: "48px 32px", marginBottom: "32px", textAlign: "center" }}>
+  <h1 style={{ color: "#fbde58", fontSize: "48px", fontWeight: 700, margin: "0 0 16px 0", fontFamily: "Inter, sans-serif" }}>2048</h1>
+  <p style={{ color: "#d9d9d9", fontSize: "18px", margin: "0 0 32px 0", fontFamily: "Inter, sans-serif" }}>
+    Merge tiles, chase the 2048 tile, and beat your high score — available as a desktop app and in your browser.
+  </p>
+  <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+    <a href="/quickstart" style={{ backgroundColor: "#ffcc33", color: "#000000", padding: "12px 28px", borderRadius: "4px", fontWeight: 700, textDecoration: "none", fontFamily: "Inter, sans-serif", fontSize: "15px" }}>Get Started</a>
+    <a href="/guides/how-to-play" style={{ backgroundColor: "#2a4d6d", color: "#ffffff", padding: "12px 28px", borderRadius: "4px", fontWeight: 700, textDecoration: "none", fontFamily: "Inter, sans-serif", fontSize: "15px" }}>How to Play</a>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+## What is 2048?
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+2048 is a classic single-player puzzle game played on a 4×4 grid. You slide numbered tiles in four directions — left, right, up, or down. When two tiles with the same number collide, they merge into one tile with their combined value. The goal is to create a tile with the number **2048**.
 
-## Make it yours
+This project offers two ways to play:
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Desktop App" icon="desktop" href="/guides/desktop-app">
+    A native Python GUI built with Tkinter. Runs locally with keyboard controls (Arrow keys or WASD). No browser needed.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Web App" icon="globe" href="/guides/web-app">
+    A Flask-powered web server with a JavaScript frontend. Play in any browser on your local machine.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Key features
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="Score tracking" icon="trophy">
+    Tracks your current score and best (high score) across every session. Scores update in real-time as you merge tiles.
+  </Card>
+  <Card title="Keyboard controls" icon="keyboard">
+    Full support for Arrow keys and WASD in the desktop app. The web version responds to Arrow keys via JavaScript.
+  </Card>
+  <Card title="Dynamic tile colors" icon="palette">
+    Every tile value from 2 to 2048 has a distinct color, making it easy to spot merge opportunities at a glance.
+  </Card>
+  <Card title="Game over detection" icon="circle-xmark">
+    The game automatically detects when no more moves are possible and presents a replay prompt with your final score.
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Quick install
 
-## Need inspiration?
+```bash
+# Clone the repository
+git clone https://github.com/NiwinKumar/2048-TheGame.git
+cd 2048-TheGame
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+# Install dependencies
+pip install numpy flask
+
+# Run the desktop version
+python 2048.py
+
+# Or run the web version
+python app.py
+```
+
+<Note>
+  Python 3.x is required. The desktop app uses `tkinter` (bundled with Python on most platforms) and `numpy`. The web app additionally requires `flask`.
+</Note>
+
+## Project structure
+
+```
+2048-TheGame/
+├── 2048.py          # Desktop Tkinter application
+├── app.py           # Flask web server + Game2048 logic
+├── templates/
+│   └── index.html   # Web app HTML template
+├── static/
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       └── script.js
+└── screenshots/
+    ├── 2048.png
+    └── 20481.png
+```
+
+## Continue reading
+
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn about the project background, design philosophy, and technology choices.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install and run the game in under two minutes.
+  </Card>
+  <Card title="Game logic reference" icon="code" href="/reference/game-logic">
+    Detailed documentation of the Game2048 class methods and algorithms.
+  </Card>
+  <Card title="Flask API reference" icon="server" href="/reference/flask-api">
+    REST API endpoints exposed by the web version.
+  </Card>
+</CardGroup>

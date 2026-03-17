@@ -1,0 +1,441 @@
+---
+title: 'Game logic'
+description: 'Complete reference for the Game2048 class — every public method, the movement algorithm, and worked examples.'
+---
+
+The `Game2048` class in `2048.py` manages the entire desktop game: board state, scoring, Tkinter UI rendering, and all movement logic. It uses a 4×4 NumPy integer array as the canonical board representation.
+
+<Note>
+This reference covers the Tkinter desktop implementation (`2048.py`). For the Flask web API, see the [Flask API reference](/reference/flask-api).
+</Note>
+
+---
+
+## Constructor
+
+### `__init__()`
+
+Initializes a new game instance. Sets up the Tkinter window, score labels, the grid UI, key bindings, and places two starting tiles.
+
+**What it does:**
+- Creates the `tk.Tk()` window titled `"2048"`
+- Sets `score = 0` and `high_score = 0`
+- Initializes `matrix` as a 4×4 NumPy array of zeros (`dtype=int`)
+- Calls `init_grid()` to build the visual grid
+- Calls `add_new_tile()` twice to seed the board
+- Binds arrow keys and WASD keys to `move()`
+
+```python
+self.score = 0
+self.high_score = 0
+self.matrix = np.zeros((4, 4), dtype=int)
+
+self.init_grid()
+self.add_new_tile()
+self.add_new_tile()
+```
+
+---
+
+## Grid and UI methods
+
+### `init_grid()`
+
+Builds the 4×4 visual grid of Tkinter `Label` widgets and stores them in `self.grid_cells`.
+
+**What it does:**
+- Creates a `tk.Frame` (background panel, 400×400, `#bbada0`)
+- Iterates over all 16 positions and creates a cell `Frame` + a `Label` for each
+- Stores labels in `self.grid_cells[i][j]` for later update
+- Labels are centered using `place(relx=0.5, rely=0.5, anchor="center")`
+
+```python
+for i in range(4):
+    grid_row = []
+    for j in range(4):
+        cell = tk.Frame(background, bg='#cdc1b4', width=100, height=100)
+        cell.grid(row=i, column=j, padx=5, pady=5)
+        cell.grid_propagate(False)
+        cell_number = tk.Label(
+            cell,
+            bg='#cdc1b4',
+            justify=tk.CENTER,
+            font=('Arial', 30, 'bold'),
+            width=4,
+            height=2
+        )
+        cell_number.place(relx=0.5, rely=0.5, anchor="center")
+        grid_row.append(cell_number)
+    self.grid_cells.append(grid_row)
+```
+
+---
+
+### `update_grid_cells()`
+
+Synchronizes all 16 `Label` widgets with the current values in `self.matrix`.
+
+**What it does:**
+- Iterates every `(i, j)` position
+- For zero cells: clears the label text and resets background to `#cdc1b4`
+- For non-zero cells: sets the label text, background color (via `get_cell_color`), and foreground color (via `get_text_color`)
+- Calls `window.update_idletasks()` to flush pending UI updates immediately
+
+```python
+def update_grid_cells(self):
+    for i in range(4):
+        for j in range(4):
+            new_number = self.matrix[i][j]
+            if new_number == 0:
+                self.grid_cells[i][j].configure(text="", bg='#cdc1b4')
+            else:
+                self.grid_cells[i][j].configure(
+                    text=str(new_number),
+                    bg=self.get_cell_color(new_number),
+                    fg=self.get_text_color(new_number)
+                )
+    self.window.update_idletasks()
+```
+
+---
+
+### `get_cell_color(number)`
+
+Returns the background hex color for a tile based on its value.
+
+<ParamField path="number" type="int" required>
+  The tile value. Must be a power of 2 between 2 and 2048 for a defined color. Any other value returns the fallback dark color.
+</ParamField>
+
+**Returns:** A hex color string.
+
+| Value | Color |
+|-------|-------|
+| 2 | `#eee4da` |
+| 4 | `#ede0c8` |
+| 8 | `#f2b179` |
+| 16 | `#f59563` |
+| 32 | `#f67c5f` |
+| 64 | `#f65e3b` |
+| 128 | `#edcf72` |
+| 256 | `#edcc61` |
+| 512 | `#edc850` |
+| 1024 | `#edc53f` |
+| 2048 | `#edc22e` |
+| other | `#3c3a32` |
+
+```python
+def get_cell_color(self, number):
+    colors = {
+        2: '#eee4da', 4: '#ede0c8', 8: '#f2b179',
+        16: '#f59563', 32: '#f67c5f', 64: '#f65e3b',
+        128: '#edcf72', 256: '#edcc61', 512: '#edc850',
+        1024: '#edc53f', 2048: '#edc22e'
+    }
+    return colors.get(number, '#3c3a32')
+```
+
+---
+
+### `get_text_color(number)`
+
+Returns the foreground (text) color for a tile.
+
+<ParamField path="number" type="int" required>
+  The tile value.
+</ParamField>
+
+**Returns:** `#f9f6f2` (light) for values ≥ 8; `#776e65` (dark) for values 2 and 4.
+
+```python
+def get_text_color(self, number):
+    return '#f9f6f2' if number >= 8 else '#776e65'
+```
+
+---
+
+## Tile management
+
+### `add_new_tile()`
+
+Places a new tile (2 or 4) at a random empty cell on the board.
+
+**What it does:**
+- Scans `self.matrix` for cells equal to `0`
+- If any empty cells exist, picks one at random using `random.choice`
+- Places a `2` with 90% probability or a `4` with 10% probability
+- Calls `update_grid_cells()` to reflect the change in the UI
+
+```python
+def add_new_tile(self):
+    empty_cells = [
+        (i, j) for i in range(4)
+        for j in range(4) if self.matrix[i][j] == 0
+    ]
+    if empty_cells:
+        i, j = random.choice(empty_cells)
+        self.matrix[i][j] = 2 if random.random() < 0.9 else 4
+        self.update_grid_cells()
+```
+
+---
+
+## Movement building blocks
+
+All four directional moves are composed from three primitive operations: `stack`, `combine`, and `reverse`/`transpose`.
+
+### `stack()`
+
+Compacts all non-zero tiles to the left within each row, preserving order.
+
+**What it does:**
+- Creates a new 4×4 zero matrix
+- For each row, iterates left-to-right and copies non-zero values into the next available position starting from column 0
+- Assigns the result back to `self.matrix`
+
+<Note>
+`stack()` does not merge tiles — it only removes gaps. It is always called before and after `combine()`.
+</Note>
+
+```python
+def stack(self):
+    new_matrix = np.zeros((4, 4), dtype=int)
+    for i in range(4):
+        fill_position = 0
+        for j in range(4):
+            if self.matrix[i][j] != 0:
+                new_matrix[i][fill_position] = self.matrix[i][j]
+                fill_position += 1
+    self.matrix = new_matrix
+```
+
+---
+
+### `combine()`
+
+Merges adjacent equal tiles within each row from left to right.
+
+**What it does:**
+- For each row, checks every adjacent pair `(j, j+1)`
+- If both cells are non-zero and equal, doubles the left cell, zeros the right cell
+- Adds the doubled value to `self.score`
+- Updates `high_score` and score labels if the current score exceeds the best
+
+<Note>
+Each tile can only be merged once per move. Because `combine()` scans left-to-right after `stack()`, a cascading merge (e.g. `[2, 2, 2, 2]` → `[4, 0, 4, 0]`, not `[8, 0, 0, 0]`) is handled correctly by the second `stack()` call.
+</Note>
+
+```python
+def combine(self):
+    for i in range(4):
+        for j in range(3):
+            if self.matrix[i][j] != 0 and self.matrix[i][j] == self.matrix[i][j + 1]:
+                self.matrix[i][j] *= 2
+                self.score += self.matrix[i][j]
+                if self.score > self.high_score:
+                    self.high_score = self.score
+                    self.high_score_label.config(text=f"Best: {self.high_score}")
+                self.score_label.config(text=f"Score: {self.score}")
+                self.matrix[i][j + 1] = 0
+```
+
+---
+
+### `reverse()`
+
+Flips the matrix horizontally (mirrors column order within each row).
+
+**What it does:** Calls `np.flip(self.matrix, axis=1)` and assigns the result back.
+
+```python
+def reverse(self):
+    self.matrix = np.flip(self.matrix, axis=1)
+```
+
+---
+
+### `transpose()`
+
+Transposes the matrix (swaps rows and columns).
+
+**What it does:** Assigns `self.matrix.T` back to `self.matrix`.
+
+```python
+def transpose(self):
+    self.matrix = self.matrix.T
+```
+
+---
+
+## Movement algorithm
+
+Every direction is implemented as a sequence of the four primitives above. The pattern ensures that `stack()` and `combine()` always operate in the "left" direction — other directions are achieved by rotating the matrix into and out of that canonical orientation.
+
+| Direction | Operation sequence |
+|-----------|-------------------|
+| left | `stack → combine → stack` |
+| right | `reverse → stack → combine → stack → reverse` |
+| up | `transpose → stack → combine → stack → transpose` |
+| down | `transpose → reverse → stack → combine → stack → reverse → transpose` |
+
+### Worked example: left
+
+Starting board row: `[0, 2, 2, 4]`
+
+<Steps>
+  <Step title="stack()">
+    Compact non-zero values to the left:
+    `[0, 2, 2, 4]` → `[2, 2, 4, 0]`
+  </Step>
+  <Step title="combine()">
+    Merge adjacent equal pairs left-to-right:
+    `[2, 2, 4, 0]` → `[4, 0, 4, 0]` (score += 4)
+  </Step>
+  <Step title="stack()">
+    Compact again to close the gap:
+    `[4, 0, 4, 0]` → `[4, 4, 0, 0]`
+  </Step>
+</Steps>
+
+### Worked example: right
+
+Same starting row: `[0, 2, 2, 4]`
+
+<Steps>
+  <Step title="reverse()">
+    Mirror the row: `[0, 2, 2, 4]` → `[4, 2, 2, 0]`
+  </Step>
+  <Step title="stack()">
+    Compact left: `[4, 2, 2, 0]` → `[4, 2, 2, 0]` (no change here)
+  </Step>
+  <Step title="combine()">
+    Merge: `[4, 2, 2, 0]` → `[4, 4, 0, 0]` (score += 4)
+  </Step>
+  <Step title="stack()">
+    Compact: `[4, 4, 0, 0]` → `[4, 4, 0, 0]` (no change)
+  </Step>
+  <Step title="reverse()">
+    Mirror back: `[4, 4, 0, 0]` → `[0, 0, 4, 4]`
+  </Step>
+</Steps>
+
+---
+
+### `move(direction)`
+
+Orchestrates a full move for one of the four directions.
+
+<ParamField path="direction" type="string" required>
+  One of `"left"`, `"right"`, `"up"`, or `"down"`.
+</ParamField>
+
+**What it does:**
+1. Saves a copy of the current matrix as `original_matrix`
+2. Applies the direction-specific sequence of primitives (see table above)
+3. If the matrix changed (`not np.array_equal`), calls `add_new_tile()`
+4. Calls `game_over()` and, if true, opens a `tk.Toplevel` game-over dialog with the final score and a "Play Again" button
+
+```python
+def move(self, direction):
+    original_matrix = self.matrix.copy()
+
+    if direction == "left":
+        self.stack(); self.combine(); self.stack()
+    elif direction == "right":
+        self.reverse(); self.stack(); self.combine(); self.stack(); self.reverse()
+    elif direction == "up":
+        self.transpose(); self.stack(); self.combine(); self.stack(); self.transpose()
+    elif direction == "down":
+        self.transpose(); self.reverse()
+        self.stack(); self.combine(); self.stack()
+        self.reverse(); self.transpose()
+
+    if not np.array_equal(original_matrix, self.matrix):
+        self.add_new_tile()
+
+    if self.game_over():
+        # show game-over dialog ...
+```
+
+---
+
+## Game state
+
+### `game_over()`
+
+Checks whether the current board has no legal moves remaining.
+
+**What it does:**
+1. Returns `False` immediately if any cell equals `0` (empty cell exists)
+2. Checks every horizontally adjacent pair in each row for equality
+3. Checks every vertically adjacent pair in each column for equality
+4. Returns `True` only if all cells are filled and no merges are possible
+
+**Returns:** `bool` — `True` if the game is over, `False` if at least one move remains.
+
+```python
+def game_over(self):
+    if 0 in self.matrix:
+        return False
+
+    for i in range(4):
+        for j in range(3):
+            if self.matrix[i][j] == self.matrix[i][j + 1]:
+                return False
+
+    for i in range(3):
+        for j in range(4):
+            if self.matrix[i][j] == self.matrix[i + 1][j]:
+                return False
+
+    return True
+```
+
+---
+
+### `reset_game()`
+
+Resets the game to its initial state without closing the window.
+
+**What it does:**
+- Sets `self.score = 0` and updates the score label
+- Reinitializes `self.matrix` to a 4×4 zero array
+- Calls `add_new_tile()` twice
+- Calls `update_grid_cells()` to clear all displayed values
+
+<Tip>
+This method is bound to both the "New Game" button and the "Play Again" button in the game-over dialog.
+</Tip>
+
+```python
+def reset_game(self):
+    self.score = 0
+    self.score_label.config(text=f"Score: {self.score}")
+    self.matrix = np.zeros((4, 4), dtype=int)
+    self.add_new_tile()
+    self.add_new_tile()
+    self.update_grid_cells()
+```
+
+---
+
+## Application entry point
+
+### `run()`
+
+Starts the Tkinter main event loop. Blocks until the window is closed.
+
+**What it does:** Calls `self.window.mainloop()`.
+
+```python
+def run(self):
+    self.window.mainloop()
+```
+
+The module entry point creates an instance and calls `run()`:
+
+```python
+if __name__ == "__main__":
+    game = Game2048()
+    game.run()
+```

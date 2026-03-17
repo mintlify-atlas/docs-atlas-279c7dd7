@@ -1,0 +1,167 @@
+---
+title: How to play
+description: Learn the rules, controls, scoring, and strategy for 2048.
+---
+
+2048 is a single-player sliding tile puzzle. Tiles on a 4×4 grid slide when you press a direction key. Matching tiles merge and double in value. The goal is to create a tile with the value **2048**.
+
+## Objective
+
+Combine tiles by sliding them across the board until you create a **2048** tile. You can keep playing after reaching 2048 — the board supports tiles beyond that value.
+
+## The grid
+
+The board is a **4×4 grid** (16 cells). At the start of each game, two tiles are placed at random positions. Each new tile is either:
+
+- **2** — spawned with 90% probability
+- **4** — spawned with 10% probability
+
+A new tile is added after every successful move (a move where at least one tile changed position or merged).
+
+## How moves work
+
+When you press a direction key:
+
+1. All tiles slide as far as possible in that direction.
+2. Adjacent tiles with the **same value** merge into one tile with double the value.
+3. A tile can only merge once per move.
+4. A new tile (2 or 4) spawns in a random empty cell.
+
+<AccordionGroup>
+  <Accordion title="Example: sliding left">
+    Before move:
+
+    ```
+    [ 2 ][ 2 ][ 0 ][ 4 ]
+    ```
+
+    After pressing left:
+
+    ```
+    [ 4 ][ 4 ][ 0 ][ 0 ]
+    ```
+
+    The two `2` tiles merged into a `4`. The existing `4` slid left but did not merge (a tile can only merge once per move). A new tile then spawns in an empty cell.
+  </Accordion>
+  <Accordion title="Example: a tile can only merge once">
+    Before move:
+
+    ```
+    [ 2 ][ 2 ][ 2 ][ 2 ]
+    ```
+
+    After pressing left:
+
+    ```
+    [ 4 ][ 4 ][ 0 ][ 0 ]
+    ```
+
+    The first pair merges to `4`, the second pair merges to `4`. No tile merges twice in one move.
+  </Accordion>
+</AccordionGroup>
+
+## Scoring
+
+Each merge contributes to your score:
+
+> **Score += merged tile value**
+
+| Merge | New tile | Points added |
+|---|---|---|
+| 2 + 2 | 4 | 4 |
+| 4 + 4 | 8 | 8 |
+| 32 + 32 | 64 | 64 |
+| 64 + 64 | 128 | 128 |
+| 1024 + 1024 | 2048 | 2048 |
+
+Multiple merges in a single move each add their value separately. There is no bonus multiplier.
+
+## High score
+
+The **Best** counter tracks the highest score reached. It is updated whenever your current score exceeds the stored high score. High scores are held **in memory for the duration of the session** — they are not persisted to disk or a database, and reset when you close the app or restart the server.
+
+## Controls
+
+<Tabs>
+  <Tab title="Desktop app">
+    | Key | Action |
+    |---|---|
+    | `←` Arrow Left | Slide tiles left |
+    | `→` Arrow Right | Slide tiles right |
+    | `↑` Arrow Up | Slide tiles up |
+    | `↓` Arrow Down | Slide tiles down |
+    | `A` | Slide tiles left |
+    | `D` | Slide tiles right |
+    | `W` | Slide tiles up |
+    | `S` | Slide tiles down |
+
+    Both arrow keys and WASD are bound simultaneously.
+  </Tab>
+  <Tab title="Web app">
+    | Key | Action |
+    |---|---|
+    | `←` Arrow Left | Slide tiles left |
+    | `→` Arrow Right | Slide tiles right |
+    | `↑` Arrow Up | Slide tiles up |
+    | `↓` Arrow Down | Slide tiles down |
+
+    The web version only binds arrow keys. WASD is not supported by default.
+  </Tab>
+</Tabs>
+
+## Tile value progression
+
+Every tile is a power of two. The full chain from start to goal:
+
+**2 → 4 → 8 → 16 → 32 → 64 → 128 → 256 → 512 → 1024 → 2048**
+
+<Note>
+You can continue past 2048. Tiles that exceed 2048 render with a dark background (`#3c3a32`) rather than the unique color assigned to each value up to 2048.
+</Note>
+
+## Game over
+
+The game ends when **both** of the following are true:
+
+1. **No empty cells remain** — all 16 cells contain a tile.
+2. **No adjacent merges are possible** — no two horizontally or vertically adjacent tiles share the same value.
+
+The game-over check scans every row for adjacent equal values, then every column. If any pair is found, the game continues.
+
+```python
+def game_over(self):
+    if 0 in self.matrix:
+        return False
+    for i in range(4):
+        for j in range(3):
+            if self.matrix[i][j] == self.matrix[i][j + 1]:
+                return False
+    for i in range(3):
+        for j in range(4):
+            if self.matrix[i][j] == self.matrix[i + 1][j]:
+                return False
+    return True
+```
+
+When game over is detected, a dialog appears showing your final score with an option to start a new game.
+
+## Strategy tips
+
+<CardGroup cols={2}>
+  <Card title="Pick a corner and stay there" icon="crosshairs">
+    Keep your highest-value tile in one corner at all times. Avoid moves that would dislodge it. Consistently moving in only two directions (e.g., left and down) builds a natural gradient toward that corner.
+  </Card>
+  <Card title="Build a snake pattern" icon="route">
+    Arrange tiles in a descending "snake" that zigzags toward your corner: highest value in the corner, second-highest next to it, third-highest wrapping back, and so on. This keeps large tiles adjacent for easy merging.
+  </Card>
+  <Card title="Plan ahead, not reactively" icon="eye">
+    Before pressing a key, check whether the move will create merge opportunities or scatter your pattern. A single impulsive move can displace your highest tile from the corner and put you in an unrecoverable position.
+  </Card>
+  <Card title="Keep the board from filling up" icon="layout-grid">
+    Avoid sequences of moves that do not produce merges. A full board with no merges available is game over. Prioritize moves that create or complete merge chains over moves that only slide tiles.
+  </Card>
+</CardGroup>
+
+<Tip>
+If you find your highest tile has left its corner, stop and look for a sequence of moves that returns it — even if that costs a few points. Recovering position is usually more valuable than chasing the next merge.
+</Tip>

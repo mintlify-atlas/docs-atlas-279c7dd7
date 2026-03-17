@@ -1,80 +1,123 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Install dependencies and run the 2048 desktop or web app in under two minutes."
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before you begin, make sure you have the following installed:
 
-### Step 1: Set up your local environment
+- **Python 3.x** — download from [python.org](https://www.python.org/downloads/) if not already installed.
+- **pip** — bundled with Python 3.4 and later. Verify with `pip --version`.
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Note>
+  The desktop app requires `tkinter`, which is included with the standard Python distribution on Windows and macOS. On Debian/Ubuntu Linux, install it separately: `sudo apt-get install python3-tk`.
+</Note>
 
-### Step 2: Deploy your changes
+## Installation and setup
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/NiwinKumar/2048-TheGame.git
+    ```
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Enter the project directory">
+    ```bash
+    cd 2048-TheGame
+    ```
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Install dependencies">
+    Both the desktop app and the web app share the same dependency list.
 
-### Step 3: Go live
+    ```bash
+    pip install numpy flask
+    ```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    - `numpy` — provides the `np.zeros` 4×4 integer matrix used as the game board.
+    - `flask` — powers the web server and JSON API (not needed if you only plan to run the desktop version).
+  </Step>
+
+  <Step title="Run the desktop app or the web app">
+    Choose the version you want to play.
+
+    **Desktop app (Tkinter)**
+
+    ```bash
+    python 2048.py
+    ```
+
+    A native window opens immediately. Use the arrow keys or WASD to slide tiles.
+
+    **Web app (Flask)**
+
+    ```bash
+    python app.py
+    ```
+
+    Then open your browser and navigate to:
+
+    ```
+    http://localhost:5000
+    ```
+
+    The game loads in the browser. Use the arrow keys to play.
+  </Step>
+</Steps>
+
+## What you'll see
+
+### Desktop app
+
+When `2048.py` starts, a 4×4 grid appears with two tiles already placed (each showing either **2** or **4**). The window title is `2048` and the background matches the original game's `#faf8ef` cream tone. Your current score and high score are displayed above the grid and update in real time as you merge tiles.
+
+Tile colors follow the standard 2048 palette — light beige for low values, shifting through orange and red toward golden yellow as values increase toward 2048:
+
+```python
+colors = {
+    2: '#eee4da', 4: '#ede0c8', 8: '#f2b179', 16: '#f59563',
+    32: '#f67c5f', 64: '#f65e3b', 128: '#edcf72', 256: '#edcc61',
+    512: '#edc850', 1024: '#edc53f', 2048: '#edc22e'
+}
+```
+
+### Web app
+
+When `app.py` starts, Flask launches a development server in debug mode:
+
+```python
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+Opening `http://localhost:5000` loads the HTML template served by the root route. The board renders identically to the desktop version, with the same tile colors and score display. Every keypress triggers a POST to `/move`, and the board re-renders on the response.
+
+<Tip>
+  The Flask development server is single-threaded and not suitable for production. For personal or local use it works perfectly — no extra configuration needed.
+</Tip>
+
+## Controls
+
+| Version | Controls |
+|---|---|
+| Desktop | Arrow keys (`←` `→` `↑` `↓`) or WASD |
+| Web | Arrow keys (`←` `→` `↑` `↓`) |
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn about the project architecture, technology stack, and design decisions.
+  </Card>
+  <Card title="Desktop app guide" icon="desktop" href="/guides/desktop-app">
+    Deep dive into the Tkinter implementation, window setup, and keyboard bindings.
+  </Card>
+  <Card title="Web app guide" icon="globe" href="/guides/web-app">
+    Understand the Flask routes, JSON API, and how the JavaScript frontend communicates with the server.
+  </Card>
+  <Card title="Game logic reference" icon="code" href="/reference/game-logic">
+    Full reference for every method in the `Game2048` class.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

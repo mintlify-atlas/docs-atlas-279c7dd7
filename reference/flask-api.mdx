@@ -1,0 +1,234 @@
+---
+title: 'Flask API'
+description: 'Complete REST API reference for the 2048 Flask web server — endpoints, request/response schemas, session behavior, and examples.'
+---
+
+The Flask application in `app.py` exposes a lightweight REST API that powers the browser-based version of the game. Each user session maintains an independent `Game2048` instance stored in Flask's server-side session.
+
+## Session behavior
+
+The server uses Flask's `session` object to associate game state with each browser session. When a request reaches `/move` or `/reset` and no game exists in the session yet, a fresh `Game2048` instance is created automatically.
+
+```python
+if 'game' not in session:
+    session['game'] = Game2048()
+game = session['game']
+```
+
+<Warning>
+`app.secret_key` is set to `'mysecretkey'` in the source code. This value signs the session cookie. You must replace it with a long, random secret before deploying to production. Anyone who knows the secret key can forge session cookies.
+
+```python
+# Replace before deploying
+app.secret_key = 'mysecretkey'
+```
+</Warning>
+
+---
+
+## Endpoints
+
+### GET /
+
+Serves the HTML game page.
+
+**Description:** Renders and returns `templates/index.html` — the full game frontend. No authentication or session is required.
+
+**Request body:** None.
+
+**Response:** `200 OK` with `Content-Type: text/html`.
+
+```bash
+curl http://localhost:5000/
+```
+
+---
+
+### POST /move
+
+Applies a directional move to the current game board.
+
+**Description:**
+1. Loads (or creates) the session's `Game2048` instance
+2. Validates the requested direction
+3. Calls `game.move(direction)`, `game.add_new_tile()`, and `game.update_high_score()`
+4. Returns the updated board state
+
+#### Request
+
+**Content-Type:** `application/json`
+
+<ParamField body="direction" type="string" required>
+  The direction to slide the tiles. Must be one of `"left"`, `"right"`, `"up"`, or `"down"`. Any other value returns a `400` error.
+</ParamField>
+
+#### Response
+
+**`200 OK`**
+
+<ResponseField name="grid" type="number[][]" required>
+  The updated 4×4 board as a nested array. Each element is an integer tile value (0 for empty cells).
+  <Expandable title="example">
+    ```json
+    [
+      [0, 0, 0, 2],
+      [0, 0, 4, 0],
+      [0, 2, 0, 0],
+      [4, 0, 0, 0]
+    ]
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="score" type="number" required>
+  The player's current score for this game session.
+</ResponseField>
+
+<ResponseField name="high_score" type="number" required>
+  The highest score achieved within this session (updated if the current score exceeds it).
+</ResponseField>
+
+<ResponseField name="game_over" type="boolean" required>
+  `true` when no empty cells remain and no adjacent tiles can be merged. `false` otherwise.
+</ResponseField>
+
+**`400 Bad Request`**
+
+Returned when `direction` is not one of the four valid values.
+
+<ResponseField name="error" type="string">
+  Human-readable error message. Value: `"Invalid move."`
+</ResponseField>
+
+#### Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:5000/move \
+  -H "Content-Type: application/json" \
+  -d '{"direction": "left"}'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "http://localhost:5000/move",
+    json={"direction": "left"}
+)
+print(response.json())
+```
+
+</CodeGroup>
+
+**Success response (`200 OK`):**
+
+```json
+{
+  "grid": [
+    [4, 0, 0, 0],
+    [2, 2, 0, 0],
+    [0, 0, 0, 0],
+    [2, 0, 0, 0]
+  ],
+  "score": 4,
+  "high_score": 4,
+  "game_over": false
+}
+```
+
+**Error response (`400 Bad Request`):**
+
+```json
+{
+  "error": "Invalid move."
+}
+```
+
+---
+
+### POST /reset
+
+Starts a new game, resetting the board and score to their initial state.
+
+**Description:**
+1. Loads (or creates) the session's `Game2048` instance
+2. Calls `game.new_game()`, which reinitializes the grid to zeros, resets `score` to `0`, and places two new random tiles
+3. Returns the fresh board state
+
+#### Request
+
+No request body is required.
+
+#### Response
+
+**`200 OK`**
+
+<ResponseField name="board" type="number[][]" required>
+  The freshly initialized 4×4 grid. Contains exactly two non-zero tiles (each either `2` or `4`) and fourteen `0` cells.
+  <Expandable title="example">
+    ```json
+    [
+      [0, 0, 0, 0],
+      [0, 2, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 4, 0]
+    ]
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="score" type="number" required>
+  Always `0` after a reset.
+</ResponseField>
+
+<Note>
+The `/reset` endpoint resets `score` to `0` but does not reset `high_score`. The high score persists for the lifetime of the session.
+</Note>
+
+#### Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST http://localhost:5000/reset
+```
+
+```python Python
+import requests
+
+response = requests.post("http://localhost:5000/reset")
+print(response.json())
+```
+
+</CodeGroup>
+
+**Success response (`200 OK`):**
+
+```json
+{
+  "board": [
+    [0, 0, 0, 0],
+    [0, 2, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 4, 0]
+  ],
+  "score": 0
+}
+```
+
+---
+
+## Running the server
+
+```bash
+pip install flask
+python app.py
+```
+
+The server starts on `http://127.0.0.1:5000` with debug mode enabled by default (`debug=True`). Disable debug mode before deploying to production.
+
+<Tip>
+For a multi-worker production deployment, use a WSGI server such as Gunicorn instead of the built-in Flask development server: `gunicorn app:app`.
+</Tip>

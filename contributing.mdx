@@ -1,0 +1,202 @@
+---
+title: "Contributing"
+description: "How to contribute to 2048-TheGame — report bugs, submit pull requests, and improve the desktop and web versions."
+---
+
+Contributions are welcome. Whether you want to fix a bug, add a feature, or improve code quality, this page explains how to get started.
+
+## How to contribute
+
+<Steps>
+  <Step title="Fork the repository">
+    Go to [https://github.com/NiwinKumar/2048-TheGame](https://github.com/NiwinKumar/2048-TheGame) and click **Fork** to create your own copy.
+  </Step>
+
+  <Step title="Clone your fork">
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/2048-TheGame.git
+    cd 2048-TheGame
+    ```
+  </Step>
+
+  <Step title="Create a feature branch">
+    Use a descriptive branch name that reflects your change.
+
+    ```bash
+    git checkout -b feature/my-improvement
+    ```
+  </Step>
+
+  <Step title="Set up the development environment">
+    Install the required dependencies:
+
+    ```bash
+    pip install numpy flask
+    ```
+  </Step>
+
+  <Step title="Make your changes">
+    Edit the relevant files. See [Understanding the codebase](#understanding-the-codebase) below for an overview of how the project is structured.
+
+    <Note>
+      If your change touches shared game logic (movement, scoring, board state), verify it works correctly in **both** the desktop app and the web app before committing.
+    </Note>
+  </Step>
+
+  <Step title="Test your changes">
+    Run the desktop app:
+
+    ```bash
+    python 2048.py
+    ```
+
+    Run the web app:
+
+    ```bash
+    python app.py
+    ```
+
+    Then open `http://localhost:5000` in your browser and play through several moves to confirm nothing is broken.
+  </Step>
+
+  <Step title="Commit your changes">
+    Write a clear, imperative commit message that describes what the change does.
+
+    ```bash
+    git commit -m "Add: description of change"
+    ```
+
+    <Tip>
+      Prefix your message with a short label such as `Add:`, `Fix:`, `Refactor:`, or `Test:` to make the history easier to scan.
+    </Tip>
+  </Step>
+
+  <Step title="Push your branch">
+    ```bash
+    git push origin feature/my-improvement
+    ```
+  </Step>
+
+  <Step title="Open a pull request">
+    Go to your fork on GitHub and click **Compare & pull request**. Include a clear description of:
+
+    - What the change does
+    - Which version(s) it affects (desktop, web, or both)
+    - How you tested it
+
+    <Warning>
+      Pull requests without a description of the change and how it was tested may be closed without review.
+    </Warning>
+  </Step>
+</Steps>
+
+## Areas for contribution
+
+<CardGroup cols={2}>
+  <Card title="Bug fixes" icon="bug">
+    Fix issues in the game logic (incorrect tile merging, score miscalculation) or UI glitches (misaligned tiles, broken keyboard input, session state errors in the web app).
+  </Card>
+
+  <Card title="New features" icon="sparkles">
+    Ideas include tile animations, sound effects, a persistent high score leaderboard, undo functionality, or a configurable board size (e.g. 5×5).
+  </Card>
+
+  <Card title="Web improvements" icon="globe">
+    The web version currently lacks mobile touch/swipe controls. Responsive CSS improvements and accessibility enhancements (ARIA labels, keyboard focus) are also good targets.
+  </Card>
+
+  <Card title="Code quality" icon="code">
+    Refactor duplicated logic between `2048.py` and `app.py` into a shared module, add unit tests for the movement primitives, or add type hints throughout.
+  </Card>
+</CardGroup>
+
+## Development setup
+
+**Prerequisites**
+
+- Python 3.x
+- `tkinter` (included with most Python distributions; required for the desktop app)
+
+**Install dependencies**
+
+```bash
+pip install numpy flask
+```
+
+**Run the desktop app**
+
+```bash
+python 2048.py
+```
+
+**Run the web app**
+
+```bash
+python app.py
+```
+
+The web app listens on `http://localhost:5000` by default.
+
+<Tip>
+  Use a virtual environment to keep dependencies isolated:
+
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate  # Windows: .venv\Scripts\activate
+  pip install numpy flask
+  ```
+</Tip>
+
+## Code style guidelines
+
+- Follow [PEP 8](https://peps.python.org/pep-0008/) for all Python code.
+- Use `snake_case` for method and variable names, consistent with the existing codebase.
+- Add comments for non-obvious logic — especially the movement algorithms, which combine several small primitives to handle all four directions.
+- Avoid introducing new dependencies unless genuinely necessary.
+- If you change shared game logic, test both the desktop and web versions before opening a pull request.
+
+## Understanding the codebase
+
+### Movement algorithm
+
+All four movement directions (left, right, up, down) are implemented by composing four primitive operations:
+
+| Primitive | What it does |
+|---|---|
+| `stack()` | Slides all non-zero tiles to one side of each row |
+| `combine()` | Merges adjacent equal tiles and updates the score |
+| `reverse()` | Flips each row, used to reuse `stack`/`combine` for the opposite direction |
+| `transpose()` | Swaps rows and columns, used to reuse row logic for vertical moves |
+
+For example, moving **right** calls `reverse()` → `stack()` → `combine()` → `stack()` → `reverse()`. Moving **down** calls `transpose()` → `reverse()` → `stack()` → `combine()` → `stack()` → `reverse()` → `transpose()`.
+
+<Note>
+  When adding or modifying movement logic, make sure all four directions still produce correct results. A change to `stack()` or `combine()` affects every direction.
+</Note>
+
+### Two `Game2048` implementations
+
+The project contains two separate implementations of the game:
+
+- **`2048.py`** — Desktop Tkinter app. Uses a NumPy 4×4 array for the board and renders tiles directly in a `tkinter.Frame`.
+- **`app.py`** — Flask web app. Uses a plain Python list-of-lists for the board (no NumPy dependency at runtime) and renders the board via `templates/index.html`.
+
+Logic changes that affect both versions (e.g. win condition, tile generation) must be applied to both files independently until a shared module is introduced.
+
+### Flask session state
+
+The web version stores each user's game state — board, score, and game-over flag — in Flask's `session` object. This means game state is per-browser-session and is not persisted to disk. Keep this in mind when working on the web version: clearing cookies or restarting the server resets the game.
+
+## Reporting bugs
+
+Open an issue at [https://github.com/NiwinKumar/2048-TheGame/issues](https://github.com/NiwinKumar/2048-TheGame/issues) and include:
+
+1. **Which version** — desktop (`2048.py`) or web (`app.py`)
+2. **Steps to reproduce** — the exact sequence of moves or actions that triggers the bug
+3. **Expected behavior** — what should happen
+4. **Actual behavior** — what actually happens
+5. **Python version** — output of `python --version`
+
+<Tip>
+  For logic bugs, including the board state (tile positions and values) at the time of the bug makes it much easier to reproduce and fix.
+</Tip>

@@ -1,0 +1,148 @@
+---
+title: Desktop app
+description: Run and use the 2048 Tkinter desktop application on your local machine.
+---
+
+The desktop version of 2048 is a standalone Python application built with [Tkinter](https://docs.python.org/3/library/tkinter.html) and NumPy. It runs entirely offline with no server required.
+
+## Prerequisites
+
+Before running the desktop app, make sure you have the following installed:
+
+- **Python 3.x** — [python.org/downloads](https://www.python.org/downloads/)
+- **NumPy** — used for the 4×4 grid matrix
+- **Tkinter** — bundled with Python on Windows and macOS
+
+Install NumPy with pip:
+
+```bash
+pip install numpy
+```
+
+<Note>
+Tkinter is included with standard Python distributions on Windows and macOS. On some Linux systems it must be installed separately:
+
+```bash
+sudo apt install python3-tk
+```
+</Note>
+
+## Running the app
+
+<Steps>
+  <Step title="Clone or download the source">
+    Download `2048.py` to your local machine.
+  </Step>
+  <Step title="Install dependencies">
+    ```bash
+    pip install numpy
+    ```
+  </Step>
+  <Step title="Launch the game">
+    ```bash
+    python 2048.py
+    ```
+    A 400×400 pixel window titled **2048** opens immediately.
+  </Step>
+</Steps>
+
+## Window layout
+
+The game window is organized into three visual sections:
+
+| Section | Description |
+|---|---|
+| Score bar | Displays **Score** and **Best** (high score) side by side on a `#bbada0` background |
+| Controls bar | **New Game** button (`#8f7a66`) resets the board and score |
+| 4×4 grid | The main play area — 16 cells at 100×100 px each, with 5 px gutters |
+| Instructions | Static label below the grid: "Use arrow keys to move tiles. Combine same numbers to reach 2048!" |
+
+The window background color is `#faf8ef` and the grid background is `#bbada0`.
+
+## Keyboard controls
+
+The app binds both arrow keys and WASD for accessibility:
+
+| Key | WASD equivalent | Action |
+|---|---|---|
+| `←` Arrow Left | `A` | Slide all tiles left |
+| `→` Arrow Right | `D` | Slide all tiles right |
+| `↑` Arrow Up | `W` | Slide all tiles up |
+| `↓` Arrow Down | `S` | Slide all tiles down |
+
+## Scoring
+
+Every time two identical tiles merge, the merged tile's value is added to your score. For example, merging two `64` tiles creates a `128` tile and adds **128** to your score.
+
+- The **Score** counter updates live after every move.
+- The **Best** counter tracks the highest score reached during the current session. It is stored in memory and resets when you close the window.
+- Starting a new game resets the **Score** to `0` but preserves **Best** if your previous score was not a new high.
+
+## New Game button
+
+Clicking **New Game** calls `reset_game()`, which:
+
+1. Sets `self.score` back to `0` and updates the score label.
+2. Clears the matrix to a 4×4 array of zeros (`np.zeros((4, 4), dtype=int)`).
+3. Spawns two new tiles on the blank board.
+4. Redraws all 16 grid cells.
+
+<Warning>
+Resetting a game does **not** save your current score anywhere. If you have reached a high score and click New Game before the session ends, the high score displayed in the session is preserved, but no persistent storage (file or database) is written.
+</Warning>
+
+## Game over dialog
+
+When no empty cells remain and no adjacent tiles share a value, `game_over()` returns `True` and a `tk.Toplevel` dialog appears:
+
+- **Title:** "Game Over"
+- **Body:** Displays your final score.
+- If your final score exceeds the previous high score, a **"New High Score!"** message is shown.
+- A **Play Again** button restarts the game without closing the dialog window.
+
+## Tile color reference
+
+Each tile value has a distinct background color. Text is dark (`#776e65`) for low values and light (`#f9f6f2`) for values of 8 and above.
+
+| Tile value | Background color | Text color |
+|---|---|---|
+| `2` | `#eee4da` | `#776e65` |
+| `4` | `#ede0c8` | `#776e65` |
+| `8` | `#f2b179` | `#f9f6f2` |
+| `16` | `#f59563` | `#f9f6f2` |
+| `32` | `#f67c5f` | `#f9f6f2` |
+| `64` | `#f65e3b` | `#f9f6f2` |
+| `128` | `#edcf72` | `#f9f6f2` |
+| `256` | `#edcc61` | `#f9f6f2` |
+| `512` | `#edc850` | `#f9f6f2` |
+| `1024` | `#edc53f` | `#f9f6f2` |
+| `2048` | `#edc22e` | `#f9f6f2` |
+| `> 2048` | `#3c3a32` | `#f9f6f2` |
+
+## Platform compatibility
+
+<Tabs>
+  <Tab title="Windows">
+    Tkinter is bundled with the official Python installer from python.org. No extra steps are needed.
+
+    ```bash
+    python 2048.py
+    ```
+  </Tab>
+  <Tab title="macOS">
+    Tkinter is included with the Python installer from python.org. If you installed Python via Homebrew, Tkinter may not be included — use the official installer instead.
+
+    ```bash
+    python3 2048.py
+    ```
+  </Tab>
+  <Tab title="Linux">
+    Install `python3-tk` via your package manager before running:
+
+    ```bash
+    sudo apt install python3-tk   # Debian/Ubuntu
+    sudo dnf install python3-tkinter  # Fedora
+    python3 2048.py
+    ```
+  </Tab>
+</Tabs>

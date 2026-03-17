@@ -1,0 +1,165 @@
+---
+title: "Introduction"
+description: "Learn about the 2048-TheGame project, its two implementations, the technology stack, and the key design decisions behind the game logic."
+---
+
+## What is 2048-TheGame?
+
+2048-TheGame is an open-source Python implementation of the classic 2048 sliding-tile puzzle. The goal is straightforward: slide numbered tiles on a 4×4 grid, merge matching pairs, and work your way up to the 2048 tile. The project was built as a hands-on exploration of Python GUI programming and web development, offering two fully playable implementations from a single shared game engine.
+
+<CardGroup cols={2}>
+  <Card title="Desktop app" icon="desktop" href="/guides/desktop-app">
+    A native GUI built with Tkinter. Runs entirely offline with keyboard controls. No browser or network connection required.
+  </Card>
+  <Card title="Web app" icon="globe" href="/guides/web-app">
+    A Flask server with a JavaScript frontend. Play in any modern browser at `http://localhost:5000`.
+  </Card>
+</CardGroup>
+
+## Why this project exists
+
+2048-TheGame was built with two goals in mind:
+
+- **Learning through building.** Implementing 2048 from scratch requires solving real algorithmic problems — sliding and merging tiles, detecting game-over conditions, and tracking scores — making it an ideal project for sharpening Python skills.
+- **Two interfaces, one engine.** By targeting both a desktop GUI (Tkinter) and a web server (Flask), the project demonstrates how the same core game logic can power fundamentally different frontends without duplication.
+
+## Technology stack
+
+| Layer | Technology | Role |
+|---|---|---|
+| Core language | Python 3 | Game logic, both applications |
+| Grid representation | NumPy | 4×4 integer matrix for the board state |
+| Desktop GUI | Tkinter | Window, tile rendering, keyboard bindings |
+| Web server | Flask | HTTP routes, JSON API, session management |
+| Web frontend | JavaScript | Key event handling, fetch calls to the Flask API |
+| Web styles | CSS | Tile colors, layout, animations |
+
+## The two implementations
+
+### Desktop app (`2048.py`)
+
+The desktop app is a self-contained `Game2048` class that creates a `tk.Tk` window, draws the grid as a 4×4 array of `tk.Label` widgets, and binds arrow keys and WASD directly to movement handlers.
+
+```python
+# Keyboard bindings in __init__
+self.window.bind("<Left>",  lambda event: self.move("left"))
+self.window.bind("<Right>", lambda event: self.move("right"))
+self.window.bind("<Up>",    lambda event: self.move("up"))
+self.window.bind("<Down>",  lambda event: self.move("down"))
+self.window.bind("a", lambda event: self.move("left"))
+self.window.bind("d", lambda event: self.move("right"))
+self.window.bind("w", lambda event: self.move("up"))
+self.window.bind("s", lambda event: self.move("down"))
+```
+
+The score and high score are stored as instance variables and updated in-place after every move. Tile colors are resolved at render time via `get_cell_color`, which maps each tile value to a fixed hex color:
+
+```python
+def get_cell_color(self, number):
+    colors = {
+        2: '#eee4da', 4: '#ede0c8', 8: '#f2b179', 16: '#f59563',
+        32: '#f67c5f', 64: '#f65e3b', 128: '#edcf72', 256: '#edcc61',
+        512: '#edc850', 1024: '#edc53f', 2048: '#edc22e'
+    }
+    return colors.get(number, '#3c3a32')
+```
+
+Text color switches based on tile value — lighter text for tiles 8 and above, darker text for smaller tiles:
+
+```python
+def get_text_color(self, number):
+    return '#f9f6f2' if number >= 8 else '#776e65'
+```
+
+### Web app (`app.py`)
+
+The Flask app exposes three routes. The root route serves the HTML template; `/move` and `/reset` accept POST requests with JSON payloads and return the updated board state:
+
+```python
+@app.route('/move', methods=['POST'])
+def move():
+    direction = request.json['direction']
+    game.move(direction)
+    return jsonify({
+        'board': game.matrix.tolist(),
+        'score': game.score,
+        'high_score': game.high_score,
+        'game_over': game.game_over()
+    })
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    game.reset_game()
+    return jsonify({
+        'board': game.matrix.tolist(),
+        'score': game.score,
+        'high_score': game.high_score,
+        'game_over': game.game_over()
+    })
+```
+
+The JavaScript frontend listens for `keydown` events, maps arrow keys to direction strings, and calls the `/move` endpoint. The board is re-rendered on every response.
+
+## Key design decisions
+
+### NumPy matrix for the grid
+
+The board is stored as a 4×4 NumPy integer array (`np.zeros((4, 4), dtype=int)`) rather than a plain Python list of lists. This makes it straightforward to apply array-level operations — transposition, row reversal, and stacking — that map cleanly onto the four movement directions.
+
+```python
+self.matrix = np.zeros((4, 4), dtype=int)
+```
+
+When a new game starts, the matrix is re-initialized to all zeros and two tiles are placed:
+
+```python
+def reset_game(self):
+    self.score = 0
+    self.score_label.config(text=f"Score: {self.score}")
+    self.matrix = np.zeros((4, 4), dtype=int)
+    self.add_new_tile()
+    self.add_new_tile()
+    self.update_grid_cells()
+```
+
+### Tile spawning
+
+After every valid move, a new tile is placed on a randomly selected empty cell. Ninety percent of spawned tiles have a value of 2; the remaining ten percent spawn as 4:
+
+```python
+def add_new_tile(self):
+    empty_cells = [(i, j) for i in range(4) for j in range(4) if self.matrix[i][j] == 0]
+    if empty_cells:
+        i, j = random.choice(empty_cells)
+        self.matrix[i][j] = 2 if random.random() < 0.9 else 4
+```
+
+### Movement via stack, combine, reverse, and transpose
+
+All four movement directions are implemented using four primitive operations on the NumPy matrix:
+
+- **stack** — compresses non-zero tiles to one end of each row, eliminating gaps.
+- **combine** — merges adjacent equal tiles (left-to-right in a row), doubling the value and adding it to the score.
+- **reverse** — mirrors each row so that a right-move can reuse the same left-move logic.
+- **transpose** — swaps rows and columns so that vertical moves can reuse horizontal-move logic.
+
+For example, moving left calls `stack → combine → stack` directly. Moving right calls `reverse → stack → combine → stack → reverse`. Moving up calls `transpose → stack → combine → stack → transpose`. Moving down calls `transpose → reverse → stack → combine → stack → reverse → transpose`.
+
+This eliminates four separate implementations and keeps the logic centralized and testable.
+
+## Continue reading
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install dependencies and launch the game in under two minutes.
+  </Card>
+  <Card title="Desktop app guide" icon="desktop" href="/guides/desktop-app">
+    Full walkthrough of the Tkinter application, controls, and customization.
+  </Card>
+  <Card title="Web app guide" icon="globe" href="/guides/web-app">
+    Set up the Flask server and understand the frontend-backend communication.
+  </Card>
+  <Card title="Game logic reference" icon="code" href="/reference/game-logic">
+    Detailed documentation of every method in the `Game2048` class.
+  </Card>
+</CardGroup>
