@@ -1,0 +1,52 @@
+{
+  "projectType": "general",
+  "projectName": "2048 - The Game",
+  "projectDescription": "A Python implementation of the classic 2048 tile-merging puzzle game, available as both a desktop Tkinter app and a Flask-powered web application.",
+  "theme": "almond",
+  "primaryColor": "#dedede",
+  "lightColor": "#fbde58",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Guides",
+            "pages": ["guides/desktop-app", "guides/web-app", "guides/how-to-play"]
+          },
+          {
+            "group": "Reference",
+            "pages": ["reference/game-logic", "reference/flask-api"]
+          },
+          {
+            "group": "Contributing",
+            "pages": ["contributing"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Desktop GUI using Python Tkinter with keyboard controls (Arrow keys and WASD)",
+    "Web version powered by Flask with a JavaScript frontend",
+    "Score and high score tracking across gameplay sessions",
+    "Dynamic tile coloring based on tile values",
+    "Game over detection with replay prompt",
+    "New Game / Reset functionality in both versions"
+  ],
+  "publicApiSurface": [
+    "GET / — Serves the web game interface (index.html)",
+    "POST /move — Accepts a direction (left/right/up/down) and returns updated grid, score, and game_over status",
+    "POST /reset — Resets the game state and returns the new board and score",
+    "Game2048.__init__() — Initializes a new game with a 4x4 grid and two random tiles",
+    "Game2048.move(direction) — Executes a move in the given direction and adds a new tile",
+    "Game2048.game_over() — Returns True if no valid moves remain",
+    "Game2048.add_new_tile() — Places a new 2 or 4 tile on a random empty cell",
+    "Game2048.reset_game() / new_game() — Resets the board and score"
+  ]
+}
